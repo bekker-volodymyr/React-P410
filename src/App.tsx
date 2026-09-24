@@ -1,9 +1,16 @@
-import './App.css'
+import "./App.css";
+import Header from "./components/Header";
+import CourseCard from "./components/CourseCard";
 
 function App() {
   return (
-    <h1>Hello</h1>
-  )
+    <div>
+      <Header studentName="Володимир" />
+      <CourseCard title="React JS" teacher="Володимир Юркевіч" credits={10} />
+
+      <CourseCard title="HTML/CSS" teacher="Володимир Юркевіч" />
+    </div>
+  );
 }
 
-export default App
+export default App;
