@@ -1,3 +1,4 @@
+import { useState } from "react";
 import clsx from "clsx";
 
 interface CourseCardProps {
@@ -13,6 +14,8 @@ export default function CourseCard({
   credits = 0,
   isActive,
 }: CourseCardProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <div
       className={clsx(
@@ -21,19 +24,28 @@ export default function CourseCard({
       )}
     >
       <h2 className="text-xl font-bold text-gray-800">{title}</h2>
-      <p className="text-gray-600 mt-2">Викладач: {teacher}</p>
-      <p className="text-gray-600 mt-2">Кредити: {credits}</p>
 
-      <div
-        className={clsx(
-          "mt-4 font-semibold text-sm px-3 py-1 inline-block rounded-full",
-          isActive
-            ? "bg-green-200 text-green-800"
-            : "bg-gray-200 text-gray-700",
-        )}
-      >
-        {isActive ? "В процесі вивчення..." : "Курс завершено"}
-      </div>
+      <button className="text-blue-500 mt-2" onClick={() => setIsOpen(!isOpen)}>
+        {isOpen ? "Приховати деталі" : "Показати деталі"}
+      </button>
+
+      {isOpen && (
+        <div>
+          <p className="text-gray-600 mt-2">Викладач: {teacher}</p>
+          <p className="text-gray-600 mt-2">Кредити: {credits}</p>
+
+          <div
+            className={clsx(
+              "mt-4 font-semibold text-sm px-3 py-1 inline-block rounded-full",
+              isActive
+                ? "bg-green-200 text-green-800"
+                : "bg-gray-200 text-gray-700",
+            )}
+          >
+            {isActive ? "В процесі вивчення..." : "Курс завершено"}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
