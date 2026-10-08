@@ -4,10 +4,10 @@ interface HeaderProps {
 
 export default function Header({ studentName }: HeaderProps) {
     return (
-        <header>
-            <h2>Електронний щоденник студента</h2>
+        <header className="text-center bg-blue-700 text-white py-4">
+            <h2 className="text-4xl font-bold uppercase mb-4">Електронний щоденник студента</h2>
             {/* Інтерполяція рядків */}
-            <p>Вітаємо, {studentName}! Гарного навчання!</p>
+            <p className="text-l">Вітаємо, {studentName}! Гарного навчання!</p>
         </header>
     )
 }
