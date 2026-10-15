@@ -45,7 +45,7 @@ function App() {
 
   return (
     <div>
-      <Header studentName={userProfile.name} />
+      <Header id={1} />
 
       <div className="p-5 m-2 w-72">
         <p className="text-gray-600 mt-2">Група: {userProfile.group}</p>
