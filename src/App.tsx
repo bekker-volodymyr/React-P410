@@ -2,6 +2,9 @@ import { useState } from "react";
 import Header from "./components/Header";
 import CourseCard from "./components/CourseCard";
 import Section from "./components/Section";
+import CourseProgress from "./components/CourseProgress";
+import FocusTimer from "./components/FocusTimer";
+
 
 const myCourses = [
   {
@@ -10,19 +13,25 @@ const myCourses = [
     teacher: "Володимир Юркевіч",
     credits: 10,
     isActive: false,
+    completedLessons: 12,
+    totalLessons: 12
   },
   {
     id: "c2",
     title: "JavaScript",
     teacher: "Володимир Юркевіч",
     credits: 20,
-    isActive: false,
+    isActive: true,
+    completedLessons: 15,
+    totalLessons: 20
   },
   {
     id: "c3",
     title: "React JS",
     teacher: "Володимир Юркевіч",
     isActive: true,
+    completedLessons: 2,
+    totalLessons: 15
   },
 ];
 
@@ -39,9 +48,22 @@ function App() {
     setUserProfile({ ...userProfile, isOnline: !userProfile.isOnline });
   };
 
-  const filteredCourses = myCourses.filter((course) =>
+  const [courses, setCourses] = useState(myCourses);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const selectedCourse = courses.find((c) => c.id === selectedCourseId);
+
+  const filteredCourses = courses.filter((course) =>
     course.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  const handleCompleteLesson = (courseId: string) => {
+    setCourses((prevCourses) =>
+      prevCourses.map((course) =>
+        course.id === courseId ?
+          { ...course, completedLessons: course.completedLessons + 1 } : course,
+      ),
+    );
+  };
 
   return (
     <div>
@@ -65,35 +87,49 @@ function App() {
         </button>
       </div>
 
-      <Section title="Мої курси">
-        <input
-          type="text"
-          placeholder="Пошук курсу..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <p className="text-sm text-gray-500 mt-2">
-          Пошук за назвою курсу: <strong>{searchQuery}</strong>
-        </p>
+      <div className="flex flex-col md:flex-row gap-6 items-start">
+        <aside className="w-full md:w-1/3 flex flex-col gap-6">
+          <CourseProgress
+            course={selectedCourse}
+            onCompleteLesson={() => selectedCourseId && handleCompleteLesson(selectedCourseId)} />
 
-        <div style={{ display: "flex", flexWrap: "wrap" }}>
-          {filteredCourses.length != 0 ? (
-            filteredCourses.map((course) => (
-              <CourseCard key={course.id} {...course} />
-            ))
-          ) : (
-            <p className="text-gray-500">Курсів не знайдено.</p>
-          )}
-        </div>
-      </Section>
+          <FocusTimer />
+        </aside>
 
-      <Section title="Мої завдання">
-        <p>Тут будуть домашні завдання...</p>
-      </Section>
+        <Section title="Мої курси">
+          <input
+            type="text"
+            placeholder="Пошук курсу..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <p className="text-sm text-gray-500 mt-2">
+            Пошук за назвою курсу: <strong>{searchQuery}</strong>
+          </p>
 
-      <Section title="Мої заняття">
-        <p>Тут будуть відвідані та майбутні заняття...</p>
-      </Section>
+          <div style={{ display: "flex", flexWrap: "wrap" }}>
+            {filteredCourses.length != 0 ? (
+              filteredCourses.map((course) => (
+                <CourseCard
+                  key={course.id}
+                  {...course}
+                  isSelected={selectedCourseId === course.id}
+                  onSelect={() => setSelectedCourseId(course.id)} />
+              ))
+            ) : (
+              <p className="text-gray-500">Курсів не знайдено.</p>
+            )}
+          </div>
+        </Section>
+
+        <Section title="Мої завдання">
+          <p>Тут будуть домашні завдання...</p>
+        </Section>
+
+        <Section title="Мої заняття">
+          <p>Тут будуть відвідані та майбутні заняття...</p>
+        </Section>
+      </div>
     </div>
   );
 }
