@@ -5,35 +5,7 @@ import Section from "./components/Section";
 import CourseProgress from "./components/CourseProgress";
 import FocusTimer from "./components/FocusTimer";
 
-
-const myCourses = [
-  {
-    id: "c1",
-    title: "HTML/CSS",
-    teacher: "Володимир Юркевіч",
-    credits: 10,
-    isActive: false,
-    completedLessons: 12,
-    totalLessons: 12
-  },
-  {
-    id: "c2",
-    title: "JavaScript",
-    teacher: "Володимир Юркевіч",
-    credits: 20,
-    isActive: true,
-    completedLessons: 15,
-    totalLessons: 20
-  },
-  {
-    id: "c3",
-    title: "React JS",
-    teacher: "Володимир Юркевіч",
-    isActive: true,
-    completedLessons: 2,
-    totalLessons: 15
-  },
-];
+import { courseDetailsData } from "./data/courses";
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,7 +20,7 @@ function App() {
     setUserProfile({ ...userProfile, isOnline: !userProfile.isOnline });
   };
 
-  const [courses, setCourses] = useState(myCourses);
+  const [courses, setCourses] = useState(courseDetailsData);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const selectedCourse = courses.find((c) => c.id === selectedCourseId);
 
@@ -56,14 +28,15 @@ function App() {
     course.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handleCompleteLesson = (courseId: string) => {
-    setCourses((prevCourses) =>
-      prevCourses.map((course) =>
-        course.id === courseId ?
-          { ...course, completedLessons: course.completedLessons + 1 } : course,
-      ),
-    );
-  };
+  // const handleCompleteLesson = (courseId: string) => {
+  //   setCourses((prevCourses) =>
+  //     prevCourses.map((course) =>
+  //       course.id === courseId
+  //         ? { ...course, completedLessons: course.completedLessons + 1 }
+  //         : course,
+  //     ),
+  //   );
+  // };
 
   return (
     <div>
@@ -88,47 +61,44 @@ function App() {
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 items-start">
-        <aside className="w-full md:w-1/3 flex flex-col gap-6">
-          <CourseProgress
-            course={selectedCourse}
-            onCompleteLesson={() => selectedCourseId && handleCompleteLesson(selectedCourseId)} />
+        <aside className="w-full flex flex-col gap-6 ml-4">
+          <CourseProgress id={selectedCourseId} />
 
           <FocusTimer />
         </aside>
 
-        <Section title="Мої курси">
-          <input
-            type="text"
-            placeholder="Пошук курсу..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <p className="text-sm text-gray-500 mt-2">
-            Пошук за назвою курсу: <strong>{searchQuery}</strong>
-          </p>
+        <div className="flex flex-col">
+          <Section title="Мої курси">
+            <input
+              type="text"
+              placeholder="Пошук курсу..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
 
-          <div style={{ display: "flex", flexWrap: "wrap" }}>
-            {filteredCourses.length != 0 ? (
-              filteredCourses.map((course) => (
-                <CourseCard
-                  key={course.id}
-                  {...course}
-                  isSelected={selectedCourseId === course.id}
-                  onSelect={() => setSelectedCourseId(course.id)} />
-              ))
-            ) : (
-              <p className="text-gray-500">Курсів не знайдено.</p>
-            )}
-          </div>
-        </Section>
+            <div className="flex flex-wrap">
+              {filteredCourses.length != 0 ? (
+                filteredCourses.map((course) => (
+                  <CourseCard
+                    key={course.id}
+                    title={course.title}
+                    onSelect={() => setSelectedCourseId(course.id)}
+                  />
+                ))
+              ) : (
+                <p className="text-gray-500">Курсів не знайдено.</p>
+              )}
+            </div>
+          </Section>
 
-        <Section title="Мої завдання">
-          <p>Тут будуть домашні завдання...</p>
-        </Section>
+          <Section title="Мої завдання">
+            <p>Тут будуть домашні завдання...</p>
+          </Section>
 
-        <Section title="Мої заняття">
-          <p>Тут будуть відвідані та майбутні заняття...</p>
-        </Section>
+          <Section title="Мої заняття">
+            <p>Тут будуть відвідані та майбутні заняття...</p>
+          </Section>
+        </div>
       </div>
     </div>
   );
