@@ -60,14 +60,14 @@ function App() {
         </button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6 items-start">
-        <aside className="w-full flex flex-col gap-6 ml-4">
+      <div className="flex flex-row gap-4 items-start">
+        <aside className="w-[45%] flex flex-col gap-6 ml-4">
           <CourseProgress id={selectedCourseId} />
 
-          <FocusTimer />
+          {/* <FocusTimer /> */}
         </aside>
 
-        <div className="flex flex-col">
+        <div className="flex flex-col w-full">
           <Section title="Мої курси">
             <input
               type="text"
