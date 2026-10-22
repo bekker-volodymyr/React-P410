@@ -1,4 +1,6 @@
 import { use, useOptimistic, useState, useTransition } from "react";
+import { CheckCircle, CheckCircle2 } from "lucide-react";
+
 import type { CourseDetails, Module } from "../../data/courses";
 
 interface CourseProgressProps {
@@ -110,7 +112,7 @@ export default function CourseProgress({ coursePromise }: CourseProgressProps) {
                   m.isCompleted ? "text-green-700" : "text-gray-700"
                 }`}
               >
-                {m.isCompleted ? "Виконано" : "Виконати"}
+                {m.isCompleted ? <CheckCircle /> : <CheckCircle2 />}
               </button>
             </div>
           ))}
