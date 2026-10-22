@@ -2,10 +2,11 @@ import { useState } from "react";
 import Header from "./components/Header";
 import CourseCard from "./components/CourseCard";
 import Section from "./components/Section";
-import CourseProgress from "./components/CourseProgress";
+import CourseProgress from "./components/CourseProgress/CourseProgress";
 import FocusTimer from "./components/FocusTimer";
 
 import { courseDetailsData } from "./data/courses";
+import CourseProgressWrapper from "./components/CourseProgress/CourseProgressWrapper";
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -62,7 +63,7 @@ function App() {
 
       <div className="flex flex-col md:flex-row gap-6 items-start">
         <aside className="w-full flex flex-col gap-6 ml-4">
-          <CourseProgress id={selectedCourseId} />
+          <CourseProgressWrapper id={selectedCourseId} />
 
           <FocusTimer />
         </aside>
