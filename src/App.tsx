@@ -2,14 +2,16 @@ import { useState } from "react";
 import Header from "./components/Header";
 import CourseCard from "./components/CourseCard";
 import Section from "./components/Section";
-import CourseProgress from "./components/CourseProgress/CourseProgress";
 import FocusTimer from "./components/FocusTimer";
 
 import { courseDetailsData } from "./data/courses";
 import CourseProgressWrapper from "./components/CourseProgress/CourseProgressWrapper";
+import LoginForm from "./components/LoginForm";
+import EditProfileFrom from "./components/EditProfileForm";
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoginModal, setIsLoginModal] = useState(false);
 
   const [userProfile, setUserProfile] = useState({
     name: "Володимир Юркевіч",
@@ -23,25 +25,29 @@ function App() {
 
   const [courses, setCourses] = useState(courseDetailsData);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-  const selectedCourse = courses.find((c) => c.id === selectedCourseId);
 
   const filteredCourses = courses.filter((course) =>
     course.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  // const handleCompleteLesson = (courseId: string) => {
-  //   setCourses((prevCourses) =>
-  //     prevCourses.map((course) =>
-  //       course.id === courseId
-  //         ? { ...course, completedLessons: course.completedLessons + 1 }
-  //         : course,
-  //     ),
-  //   );
-  // };
-
   return (
     <div>
       <Header id={1} />
+
+      <button
+        onClick={() => setIsLoginModal(!isLoginModal)}
+        className="absolute z-100 right-4 top-4 font-bold bg-blue-950 px-4 py-2 text-lg text-white rounded-xl hover:scale-[1.1] transition-all"
+      >
+        {isLoginModal ? "Закрити" : "Увійти"}
+      </button>
+
+      {isLoginModal && (
+        <div className="fixed top-0 left-0 z-50 w-full h-full flex flex-col justify-center items-center bg-slate-600/30">
+          <LoginForm />
+        </div>
+      )}
+
+      <EditProfileFrom />
 
       <div className="p-5 m-2 w-72">
         <p className="text-gray-600 mt-2">Група: {userProfile.group}</p>
