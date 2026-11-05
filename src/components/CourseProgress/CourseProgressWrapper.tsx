@@ -5,15 +5,11 @@ import { courseDetailsData } from "../../data/courses";
 
 import CourseProgress from "./CourseProgress";
 import CourseProgressSkeleton from "./CourseProgressSkeleton";
+import api from "../../api/client";
 
-const fetchCourseDetails = (id: string): Promise<CourseDetails> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const course = courseDetailsData.find((c) => c.id === id);
-      if (course) resolve(course);
-      else reject(new Error(`Cannot find course with id ${id}`));
-    }, 2000);
-  });
+const fetchCourseDetails = async (id: string): Promise<CourseDetails> => {
+  const response = await api.get<CourseDetails>(`/api/courses/${id}`);
+  return response.data;
 };
 
 interface CourseProgressWrapperProps {

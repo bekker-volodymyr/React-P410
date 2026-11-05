@@ -2,6 +2,7 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
+import api from "../api/client";
 
 const loginSchema = z.object({
   email: z.email("Невірний формат пошти").min(1, "E-mail обов'язковий"),
@@ -17,14 +18,23 @@ export default function LoginForm() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<ILoginForm>({
     resolver: zodResolver(loginSchema),
   });
 
   const onSubmit: SubmitHandler<ILoginForm> = async (data) => {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    console.log("Відправлені дані: ", data);
+    try {
+      const response = await api.post("/api/login", data);
+
+      const user = response.data;
+    } catch (error) {
+      console.log("Login error", error);
+      setError("root", {
+        message: "Не вдалось увійти",
+      });
+    }
   };
 
   return (

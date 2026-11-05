@@ -99,7 +99,7 @@ export default function CourseProgress({ coursePromise }: CourseProgressProps) {
 
         <div>
           {optimisticDetails?.modules.map((m, index) => (
-            <div className="flex justify-between">
+            <div key={m.name} className="flex justify-between">
               <div>
                 <span className="font-mono">{index + 1}.</span>{" "}
                 <span className="font-bold tracking-wide">{m.name}</span>
