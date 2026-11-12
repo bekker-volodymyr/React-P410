@@ -1,13 +1,26 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+
+import { type CourseDetails } from "./data/courses";
+import api from "./api/client";
+
+import CourseProgressWrapper from "./components/CourseProgress/CourseProgressWrapper";
+import LoginForm from "./components/LoginForm";
+import EditProfileFrom from "./components/EditProfileForm";
 import Header from "./components/Header";
 import CourseCard from "./components/CourseCard";
 import Section from "./components/Section";
 import FocusTimer from "./components/FocusTimer";
 
-import { courseDetailsData } from "./data/courses";
-import CourseProgressWrapper from "./components/CourseProgress/CourseProgressWrapper";
-import LoginForm from "./components/LoginForm";
-import EditProfileFrom from "./components/EditProfileForm";
+const fetchCourses = async (): Promise<CourseDetails[]> => {
+  const response = await api.get("/api/courses/");
+
+  if (!response.status) {
+    throw new Error("Failed to fetch courses");
+  }
+
+  return response.data;
+};
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,11 +36,35 @@ function App() {
     setUserProfile({ ...userProfile, isOnline: !userProfile.isOnline });
   };
 
-  const [courses, setCourses] = useState(courseDetailsData);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
-  const filteredCourses = courses.filter((course) =>
-    course.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  const { data, isPending, error, isError } = useQuery({
+    queryKey: ["courses"],
+    queryFn: fetchCourses,
+  });
+
+  const filteredCourses = data
+    ? data.filter((course) =>
+        course.title.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+    : [];
+
+  const courseContent = isPending ? (
+    <div className="text-gray-500">Завантажуємо курси...</div>
+  ) : isError ? (
+    <div className="text-rose-400">
+      Помилка при завантажені курсів: {error.message}
+    </div>
+  ) : filteredCourses.length != 0 ? (
+    filteredCourses.map((course) => (
+      <CourseCard
+        key={course.id}
+        title={course.title}
+        onSelect={() => setSelectedCourseId(course.id)}
+      />
+    ))
+  ) : (
+    <p className="text-gray-500">Курсів не знайдено.</p>
   );
 
   return (
@@ -83,19 +120,7 @@ function App() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
 
-            <div className="flex flex-wrap">
-              {filteredCourses.length != 0 ? (
-                filteredCourses.map((course) => (
-                  <CourseCard
-                    key={course.id}
-                    title={course.title}
-                    onSelect={() => setSelectedCourseId(course.id)}
-                  />
-                ))
-              ) : (
-                <p className="text-gray-500">Курсів не знайдено.</p>
-              )}
-            </div>
+            <div className="flex flex-wrap">{courseContent}</div>
           </Section>
 
           <Section title="Мої завдання">

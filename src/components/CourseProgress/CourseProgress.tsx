@@ -1,91 +1,107 @@
-import { use, useOptimistic, useState, useTransition } from "react";
+import { useOptimistic, useTransition } from "react";
 import { CheckCircle, CheckCircle2 } from "lucide-react";
 
 import type { CourseDetails, Module } from "../../data/courses";
+import api from "../../api/client";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+
+const fetchCourseDetails = async (courseId: string): Promise<CourseDetails> => {
+  const response = await api.get(`/api/courses/${courseId}`);
+
+  if (!response.status) {
+    throw new Error("Failed to fetch course details.");
+  }
+
+  return response.data;
+};
 
 interface CourseProgressProps {
-  coursePromise: Promise<CourseDetails>;
+  courseId: string;
 }
 
-export default function CourseProgress({ coursePromise }: CourseProgressProps) {
-  const initialDetails = use(coursePromise);
+export default function CourseProgress({ courseId }: CourseProgressProps) {
+  const queryClient = useQueryClient();
 
-  const [courseDetails, setCourseDetails] =
-    useState<CourseDetails>(initialDetails);
+  const { data, isError, error } = useSuspenseQuery({
+    queryKey: ["courses", courseId],
+    queryFn: () => fetchCourseDetails(courseId),
+  });
 
-  const [isPending, startTransition] = useTransition();
-
-  const [optimisticDetails, setOptimisticDetails] = useOptimistic(
-    courseDetails,
-    (currentDetails, moduleName: string) => {
-      const updatedModules = currentDetails.modules.map((m) =>
-        m.name === moduleName ? { ...m, isCompleted: !m.isCompleted } : m,
-      );
-
-      const completedCount = updatedModules.filter((m) => m.isCompleted).length;
-
-      return {
-        ...currentDetails,
-        modules: updatedModules,
-        completedModules: completedCount,
-      };
+  const toggleModuleMutation = useMutation({
+    mutationFn: async (moduleName) => {
+      await api.patch(`/api/courses/${courseId}/toggle-module`, {
+        moduleName: moduleName,
+      });
     },
-  );
+    onMutate: async (moduleName: string) => {
+      await queryClient.cancelQueries({ queryKey: ["courses", courseId] });
+      const prevDetails = queryClient.getQueryData<CourseDetails>([
+        "courses",
+        courseId,
+      ]);
+
+      queryClient.setQueryData<CourseDetails>(["courses", courseId], (old) => {
+        if (!old) return old;
+
+        const updatedModules = old.modules.map((m) =>
+          m.name === moduleName ? { ...m, isCompleted: !m.isCompleted } : m,
+        );
+
+        const completedCount = updatedModules.filter(
+          (m) => m.isCompleted,
+        ).length;
+
+        return {
+          ...old,
+          modules: updatedModules,
+          completedModules: completedCount,
+        };
+      });
+
+      return { prevDetails };
+    },
+    onError: (error, moduleName, context) => {
+      if (context?.prevDetails) {
+        queryClient.setQueryData<CourseDetails>(
+          ["courses", courseId],
+          context.prevDetails,
+        );
+      }
+      alert(`Не вдалось оновити стан модуля. Спробуйте ще раз.`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["courses", courseId] });
+    },
+  });
 
   const completedModules =
-    optimisticDetails?.modules.filter((m) => m.isCompleted).length || 0;
+    data?.modules.filter((m) => m.isCompleted).length || 0;
 
   const progressPercentage = Math.min(
     100,
-    Math.round(
-      (completedModules / (optimisticDetails?.modules.length || 1)) * 100,
-    ),
+    Math.round((completedModules / (data?.modules.length || 1)) * 100),
   );
-
-  const handleToggleModule = async (module: Module) => {
-    startTransition(async () => {
-      setOptimisticDetails(module.name);
-
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        if (Math.random() > 0.85) {
-          throw new Error("Server error");
-        }
-
-        const updatedModules = courseDetails.modules.map((m) =>
-          m.name === module.name ? { ...m, isCompleted: !m.isCompleted } : m,
-        );
-
-        setCourseDetails({
-          ...courseDetails,
-          modules: updatedModules,
-          completedModules: updatedModules.filter((m) => m.isCompleted).length,
-        });
-      } catch (error) {
-        alert("Не вдалось оновити статус модулю. Спробуйте ще раз.");
-      }
-    });
-  };
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 w-full max-width-sm">
       <h3 className="font-bold text-lg text-gray-800 mb-4">
-        📈 Прогрес курсу: {optimisticDetails?.title}
+        📈 Прогрес курсу: {data?.title}
       </h3>
 
       <div className="space-y-4 mb-6">
         <div>
           <div>
-            <p className="font-medium text-gray-600">
-              {optimisticDetails?.description}
-            </p>
+            <p className="font-medium text-gray-600">{data?.description}</p>
           </div>
 
           <div className="flex justify-between text-sm mb-1">
             <span className="font-medium text-gray-600">Пройдено уроків: </span>
             <span className="font-bold text-blue-600">
-              {completedModules} / {optimisticDetails?.modules.length}
+              {completedModules} / {data?.modules.length}
             </span>
           </div>
 
@@ -98,24 +114,30 @@ export default function CourseProgress({ coursePromise }: CourseProgressProps) {
         </div>
 
         <div>
-          {optimisticDetails?.modules.map((m, index) => (
-            <div key={m.name} className="flex justify-between">
-              <div>
-                <span className="font-mono">{index + 1}.</span>{" "}
-                <span className="font-bold tracking-wide">{m.name}</span>
-              </div>
+          {data?.modules.map((m, index) => {
+            const isModulePending =
+              toggleModuleMutation.isPending &&
+              toggleModuleMutation.variables === m.name;
 
-              <button
-                disabled={isPending}
-                onClick={() => handleToggleModule(m)}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                  m.isCompleted ? "text-green-700" : "text-gray-700"
-                }`}
-              >
-                {m.isCompleted ? <CheckCircle /> : <CheckCircle2 />}
-              </button>
-            </div>
-          ))}
+            return (
+              <div key={m.name} className="flex justify-between">
+                <div>
+                  <span className="font-mono">{index + 1}.</span>{" "}
+                  <span className="font-bold tracking-wide">{m.name}</span>
+                </div>
+
+                <button
+                  disabled={isModulePending}
+                  onClick={() => toggleModuleMutation.mutate(m.name)}
+                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                    m.isCompleted ? "text-green-700" : "text-gray-700"
+                  }`}
+                >
+                  {m.isCompleted ? <CheckCircle /> : <CheckCircle2 />}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

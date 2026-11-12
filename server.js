@@ -28,7 +28,6 @@ app.post("/api/login", (req, res) => {
 })
 
 app.post("/api/refresh", (req,res) => {
-    // const {refreshToken} = req.body;
     const refreshToken = req.cookies.refreshToken;
 
     jwt.verify(refreshToken, REFRESH_SECRET, (err) => {
@@ -97,22 +96,12 @@ const courseDetailsData = [
       { name: "Алгоритми та структури даних STL", isCompleted: false }
     ],
     completedModules: 0
-  },
-  {
-    id: "c5",
-    title: "Fullstack на Next.js",
-    description: "Створення повноцінних веб-додатків. Використання Next.js (App Router), серверних компонентів, інтеграція з базою даних (Supabase/Prisma) та стилізація через Tailwind.",
-    teacher: "Макс",
-    modules: [
-      { name: "Архітектура Next.js (App Router)", isCompleted: true },
-      { name: "Серверні vs Клієнтські компоненти", isCompleted: true },
-      { name: "Інтеграція з базою даних", isCompleted: true },
-      { name: "Аутентифікація користувачів", isCompleted: false },
-      { name: "Деплой та оптимізація продуктивності", isCompleted: false }
-    ],
-    completedModules: 3
   }
 ];
+
+app.get('/api/courses/', (req, res) => {
+  res.json(courseDetailsData);
+})
 
 app.get('/api/courses/:id', (req, res) => {
     const token = req.cookies.accessToken;
@@ -133,6 +122,45 @@ app.get('/api/courses/:id', (req, res) => {
         res.json(targetCourse);
     })
 })
+
+app.patch('/api/courses/:id/toggle-module', (req, res) => {
+  const token = req.cookies.accessToken;
+
+  if (!token) {
+    return res.status(401).json({ message: 'Немає доступу (відсутній токен)' });
+  }
+
+  jwt.verify(token, ACCESS_SECRET, (err) => {
+    if (err) {
+      return res.status(401).json({ message: 'Токен прострочений' });
+    }
+
+    const courseId = req.params.id;
+    const { moduleName } = req.body;
+
+    console.log('ID з URL:', courseId, 'Тип:', typeof courseId);
+    console.log('Тіло запиту:', req.body);
+
+    const targetCourse = courseDetailsData.find((c) => c.id === courseId);
+    if (!targetCourse) {
+      return res.status(404).json({ message: 'Курс не знайдено' });
+    }
+
+    const targetModule = targetCourse.modules.find(
+      (m) => m.name === moduleName,
+    );
+    if (!targetModule) {
+      return res.status(404).json({ message: 'Модуль не знайдено' });
+    }
+
+    targetModule.isCompleted = !targetModule.isCompleted;
+    targetCourse.completedModules = targetCourse.modules.filter(
+      (m) => m.isCompleted,
+    ).length;
+
+    res.json({ message: 'Статус збережено', course: targetCourse });
+  });
+});
 
 const PORT = 3001;
 app.listen(PORT, () => {
