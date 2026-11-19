@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
+import fsPromises from 'fs/promises';
+import path from "path";
 
 const app = express();
 app.use(cors({
@@ -13,6 +15,12 @@ app.use(cookieParser());
 
 const ACCESS_SECRET = 'secret-access-key'
 const REFRESH_SECRET = 'secret-refresh-key'
+
+const readCoursesFromFile = async () => {
+  const filePath = path.join(process.cwd(), 'courses.json');
+  const rawData = await fsPromises.readFile(filePath, 'utf-8');
+  return JSON.parse(rawData);
+};
 
 app.post("/api/login", (req, res) => {
     const accessToken = jwt.sign({role: 'student'}, ACCESS_SECRET, {expiresIn: '15m'});
@@ -39,6 +47,22 @@ app.post("/api/refresh", (req,res) => {
         });
     })
 })
+
+app.get('/api/me', (req, res) => {
+  const token = req.cookies.accessToken;
+
+  if (!token) {
+    return res.status(401).json({ message: 'Немає доступу' });
+  }
+
+  jwt.verify(token, ACCESS_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ message: 'Токен прострочений' });
+    }
+
+    res.json({ role: decoded.role });
+  });
+});
 
 const courseDetailsData = [
   {
@@ -98,6 +122,27 @@ const courseDetailsData = [
     completedModules: 0
   }
 ];
+
+app.get('/api/courses/search', async (req, res) => {
+  try {
+    const query = (req.query.q || '').toString().trim().toLowerCase();
+    const courses = await readCoursesFromFile();
+
+    // Якщо рядок пошуку порожній — повертаємо порожній масив (або всі курси, якщо прибрати цю умову)
+    if (!query) {
+      return res.json([]);
+    }
+
+    const results = courses
+      .filter((course) => course.title.toLowerCase().includes(query))
+      .map(({ id, title }) => ({ id, title })); // Повертаємо тільки id та title
+
+    res.json(results);
+  } catch (error) {
+    console.error('Помилка читання файлу курсів:', error);
+    res.status(500).json({ message: 'Не вдалося виконати пошук' });
+  }
+});
 
 app.get('/api/courses/', (req, res) => {
   res.json(courseDetailsData);
